@@ -8,7 +8,7 @@
 
 // Test of argument parsing
 TEST(parsearg_test, argument_test) {
-    parsearg pa;
+    parsearg::parser pa;
     int argc = 3;
     char *argv[] = {"program_name", "arg1", "arg2"};
     pa.argument("foo", "foo is mock");
@@ -20,7 +20,7 @@ TEST(parsearg_test, argument_test) {
 
 // Test of option parsing
 TEST(parsearg_test, option_test) {
-    parsearg pa;
+    parsearg::parser pa;
     int argc = 2;
     char *argv[] = {"program_name", "--opt2"};
     pa.option("opt1", "opt1 is mock", false);
@@ -32,7 +32,7 @@ TEST(parsearg_test, option_test) {
 
 // Test of parsing options with arguments of its own
 TEST(parsearg_test, option_with_argument_test) {
-    parsearg pa;
+    parsearg::parser pa;
     int argc = 5;
     char *argv[] = {"program_name", "--opt1", "arg1", "--opt2", "arg2"};
     pa.option("opt1", "opt1 is mock", true);
@@ -46,7 +46,7 @@ TEST(parsearg_test, option_with_argument_test) {
 
 // Test for parsing option abbreviated to one character
 TEST(parsearg_test, option_shortname_test) {
-    parsearg pa;
+    parsearg::parser pa;
     int argc = 7;
     char *argv[] = {"program_name", "-A", "-B", "arg1", "-CD", "arg2", "-Earg3"};
     pa.option("optA", "optA is mock", false, 'A');

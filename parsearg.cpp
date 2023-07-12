@@ -5,7 +5,9 @@
 
 #include "parsearg.hpp"
 
-std::string parsearg::get_program_name() {
+using namespace parsearg;
+
+std::string parser::get_program_name() {
     if (std::filesystem::exists(argv_0)) {
         return std::filesystem::path(argv_0).filename().string();
     } else {
@@ -13,7 +15,7 @@ std::string parsearg::get_program_name() {
     }
 }
 
-void parsearg::argument(const std::string& argument_name, const std::string& description, bool is_optional) {
+void parser::argument(const std::string& argument_name, const std::string& description, bool is_optional) {
     argument_list.push_back(argument_record_t{argument_name, description});
     if (argument_name.length() > argument_len_max) {
         argument_len_max = static_cast<unsigned int>(argument_name.length());
@@ -29,7 +31,7 @@ void parsearg::argument(const std::string& argument_name, const std::string& des
     }
 }
 
-void parsearg::option(const std::string& option_name, const std::string& description, bool has_argument, char short_option_name) {
+void parser::option(const std::string& option_name, const std::string& description, bool has_argument, char short_option_name) {
     option_list.push_back(option_record_t{option_name, description, short_option_name, has_argument});
     if (short_option_name) {
         short_option[short_option_name] = option_list.back();
@@ -39,7 +41,7 @@ void parsearg::option(const std::string& option_name, const std::string& descrip
     }
 }
 
-void parsearg::print_usage(const std::string& argument_descriptions) {
+void parser::print_usage(const std::string& argument_descriptions) {
     std::cout << "usage: " << get_program_name() << " " << argument_descriptions << std::endl << std::endl;
     // Print argument usage
     if (argument_list.size() > 0) {
@@ -66,7 +68,7 @@ void parsearg::print_usage(const std::string& argument_descriptions) {
     }
 }
 
-parsearg_error_t parsearg::parse(int argc, char* argv[]) {
+parsearg_error_t parser::parse(int argc, char* argv[]) {
     const std::vector<std::string> arg_list(argv, argv + argc);
     int arg_num = 0;
     parsearg_error_t err;
@@ -94,15 +96,15 @@ parsearg_error_t parsearg::parse(int argc, char* argv[]) {
     return PARSE_OK;
 }
 
-bool parsearg::contains_argument(const std::string& argument_name) {
+bool parser::contains_argument(const std::string& argument_name) {
     return parsed_args.find(argument_name) != parsed_args.end();
 }
 
-bool parsearg::contains_option(const std::string& option_name) {
+bool parser::contains_option(const std::string& option_name) {
     return parsed_args.find(option_name + "@opt") != parsed_args.end();
 }
 
-std::string parsearg::parsed_value(const std::string& name, bool is_option) {
+std::string parser::parsed_value(const std::string& name, bool is_option) {
     if (is_option) {
         return parsed_args.at(name + "@opt");
     } else {
@@ -110,7 +112,7 @@ std::string parsearg::parsed_value(const std::string& name, bool is_option) {
     }
 }
 
-parsearg_error_t parsearg::parse_long_option(int& i, const std::vector<std::string>& arg_list) {
+parsearg_error_t parser::parse_long_option(int& i, const std::vector<std::string>& arg_list) {
     const std::string option_name = arg_list[i].substr(2);
     const auto option_record_p = std::find_if(option_list.begin(), option_list.end(), [&option_name](const option_record_t& e) { return e.name == option_name; });
     if (option_record_p != option_list.end()) {
@@ -133,7 +135,7 @@ parsearg_error_t parsearg::parse_long_option(int& i, const std::vector<std::stri
     return PARSE_OK;
 }
 
-parsearg_error_t parsearg::parse_char_option(int& i, const std::vector<std::string>& arg_list) {
+parsearg_error_t parser::parse_char_option(int& i, const std::vector<std::string>& arg_list) {
     for (int j = 1; j < arg_list[i].length(); j++) {
         const char arg_char = arg_list[i][j];
         const auto found = short_option.find(arg_char);
@@ -161,6 +163,6 @@ parsearg_error_t parsearg::parse_char_option(int& i, const std::vector<std::stri
     return PARSE_OK;
 }
 
-parsearg::option_record_t parsearg::find_by_name(const std::vector<option_record_t>& list, const std::string& name) const {
+parser::option_record_t parser::find_by_name(const std::vector<option_record_t>& list, const std::string& name) const {
     return *std::find_if(list.begin(), list.end(), [&name](const option_record_t& e) { return e.name == name; });
 }

@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+namespace parsearg {
+
 enum parsearg_error_t {
     PARSE_OK = 0,
     PARSE_ERROR_LACK_OF_ESSENTIAL_ARGUMENTS,
@@ -11,7 +13,7 @@ enum parsearg_error_t {
     PARSE_ERROR_INVALID_OPTIONS,
 };
 
-class parsearg {
+class parser {
 public:
     /**
      * @brief Set argument
@@ -112,3 +114,5 @@ private:
     int required_argument_num = 0;
     bool optional_argument_has_passed = false;
 };
+
+}
