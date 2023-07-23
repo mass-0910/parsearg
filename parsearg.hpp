@@ -102,17 +102,12 @@ private:
 
     parsearg_error_t parse_long_option(int& i, const std::vector<std::string>& arg_list);
     parsearg_error_t parse_char_option(int& i, const std::vector<std::string>& arg_list);
-    option_record_t find_by_name(const std::vector<option_record_t>& list, const std::string& name) const;
 
     parsed_arg_t parsed_args;
     std::map<char, option_record_t> short_option;
-    char* argv_0;
+    std::string program_name;
     std::vector<argument_record_t> argument_list;
     std::vector<option_record_t> option_list;
-    unsigned int argument_len_max = 0;
-    unsigned int option_len_max = 0;
-    int required_argument_num = 0;
-    bool optional_argument_has_passed = false;
 };
 
 }

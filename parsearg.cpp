@@ -8,27 +8,17 @@
 using namespace parsearg;
 
 std::string parser::get_program_name() {
-    if (std::filesystem::exists(argv_0)) {
-        return std::filesystem::path(argv_0).filename().string();
-    } else {
-        return argv_0;
-    }
+    return program_name;
 }
 
 void parser::argument(const std::string& argument_name, const std::string& description, bool is_optional) {
-    argument_list.push_back(argument_record_t{argument_name, description});
-    if (argument_name.length() > argument_len_max) {
-        argument_len_max = static_cast<unsigned int>(argument_name.length());
-    }
-    if (is_optional) {
-        optional_argument_has_passed = true;
-    } else {
-        required_argument_num++;
-        if (optional_argument_has_passed) {
+    if (!argument_list.empty()) {
+        if (std::next(argument_list.end(), -1)->is_optional && !is_optional) {
             std::cerr << "You can't add required arguments after optional arguments." << std::endl;
             exit(1);
         }
     }
+    argument_list.push_back(argument_record_t{argument_name, description, is_optional});
 }
 
 void parser::option(const std::string& option_name, const std::string& description, bool has_argument, char short_option_name) {
@@ -36,15 +26,17 @@ void parser::option(const std::string& option_name, const std::string& descripti
     if (short_option_name) {
         short_option[short_option_name] = option_list.back();
     }
-    if (option_name.length() > option_len_max) {
-        option_len_max = static_cast<unsigned int>(option_name.length());
-    }
 }
 
 void parser::print_usage(const std::string& argument_descriptions) {
     std::cout << "usage: " << get_program_name() << " " << argument_descriptions << std::endl << std::endl;
     // Print argument usage
     if (argument_list.size() > 0) {
+        // Calculate the maximum length of argument name
+        const auto argument_len_max = std::max_element(argument_list.begin(), argument_list.end(), [](const argument_record_t& a, const argument_record_t& b) {
+                                          return a.name.length() < b.name.length();
+                                      })->name.length();
+        // Output argument description
         std::cout << "Arguments:" << std::endl;
         for (auto arg : argument_list) {
             std::cout << "    " << std::setw(argument_len_max + 4) << std::left << arg.name;
@@ -54,6 +46,11 @@ void parser::print_usage(const std::string& argument_descriptions) {
     }
     // Print option usage
     if (option_list.size() > 0) {
+        // Calculate the maximum length of option name
+        const auto option_len_max = std::max_element(option_list.begin(), option_list.end(), [](const option_record_t& a, const option_record_t& b) {
+                                        return a.name.length() < b.name.length();
+                                    })->name.length();
+        // Output option description
         std::cout << "Options:" << std::endl;
         std::string opt_print;
         for (auto opt : option_list) {
@@ -88,11 +85,18 @@ parsearg_error_t parser::parse(int argc, char* argv[]) {
         }
     }
     // Error if it lacks of required arguments
+    const auto required_argument_num = std::count_if(argument_list.begin(), argument_list.end(), [](const argument_record_t& argrecord) { return !argrecord.is_optional; });
     if (arg_num < required_argument_num) {
         std::cerr << std::to_string(required_argument_num) << " arguments required" << std::endl;
         return PARSE_ERROR_LACK_OF_ESSENTIAL_ARGUMENTS;
     }
-    argv_0 = argv[0];
+    // Register program name
+    auto argv_0_str = std::string(argv[0]);
+    if (std::filesystem::exists(argv_0_str)) {
+        program_name = std::filesystem::path(argv_0_str).filename().string();
+    } else {
+        program_name = argv_0_str;
+    }
     return PARSE_OK;
 }
 
@@ -161,8 +165,4 @@ parsearg_error_t parser::parse_char_option(int& i, const std::vector<std::string
         }
     }
     return PARSE_OK;
-}
-
-parser::option_record_t parser::find_by_name(const std::vector<option_record_t>& list, const std::string& name) const {
-    return *std::find_if(list.begin(), list.end(), [&name](const option_record_t& e) { return e.name == name; });
 }
