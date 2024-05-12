@@ -64,3 +64,13 @@ TEST(parsearg_test, option_shortname_test) {
     EXPECT_EQ(pa.parsed_value("optD", true), "arg2");
     EXPECT_EQ(pa.parsed_value("optE", true), "arg3");
 }
+
+TEST(parsearg_test, argument_num_over) {
+    parsearg::parser pa;
+    int argc = 3;
+    char *argv[] = {"program_name", "hoge", "fuga"};
+    pa.argument("hoge", "hoge", false);
+    pa.option("optA", "optA is mock", false, 'A');
+    auto err = pa.parse(argc, argv);
+    EXPECT_EQ(err, parsearg::PARSE_ERROR_TOO_MANY_ARGUMENTS);
+}
