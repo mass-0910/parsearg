@@ -67,12 +67,17 @@ void parser::print_usage(const std::string& argument_descriptions) {
 
 parsearg_error_t parser::parse(int argc, char* argv[]) {
     const std::vector<std::string> arg_list(argv, argv + argc);
+    const auto required_argument_num = std::count_if(argument_list.begin(), argument_list.end(), [](const argument_record_t& argrecord) { return !argrecord.is_optional; });
     int arg_num = 0;
     parsearg_error_t err;
     for (int i = 1; i < argc; i++) {
         const std::string arg = arg_list[i];
         if (arg.empty()) continue;
         if (arg.length() <= 1 || arg[0] != '-') {  // If the argument is not an option
+            if (arg_num >= argument_list.size()) {
+                std::cerr << "Too many arguments\nonly " << std::to_string(required_argument_num) << " arguments required" << std::endl;
+                return PARSE_ERROR_TOO_MANY_ARGUMENTS;
+            }
             parsed_args[argument_list[arg_num++].name] = arg;
         } else if (arg[0] == '-' && arg[1] == '-') {  // If the argument is long-name option
             if ((err = parse_long_option(i, arg_list)) != PARSE_OK) {
@@ -85,7 +90,6 @@ parsearg_error_t parser::parse(int argc, char* argv[]) {
         }
     }
     // Error if it lacks of required arguments
-    const auto required_argument_num = std::count_if(argument_list.begin(), argument_list.end(), [](const argument_record_t& argrecord) { return !argrecord.is_optional; });
     if (arg_num < required_argument_num) {
         std::cerr << std::to_string(required_argument_num) << " arguments required" << std::endl;
         return PARSE_ERROR_LACK_OF_ESSENTIAL_ARGUMENTS;
