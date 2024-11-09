@@ -105,6 +105,7 @@ private:
     parsearg_error_t parse_char_option(int& i, const std::vector<std::string>& arg_list);
 
     parsed_arg_t parsed_args;
+    parsed_arg_t parsed_options;
     std::map<char, option_record_t> short_option;
     std::string program_name;
     std::vector<argument_record_t> argument_list;
