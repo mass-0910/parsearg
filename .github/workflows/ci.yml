@@ -1,0 +1,77 @@
+name: Basic Workflow
+
+on:
+  push:
+  pull_request:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            lib_name: libparsearg.a
+            artifact_name: parsearg_linux.tgz
+          - os: windows-latest
+            lib_name: parsearg.lib
+            artifact_name: parsearg_windows.zip
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure cmake
+        shell: bash
+        run: |
+          cmake -S . -B build -DTEST_ENABLE=ON
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 4
+
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        run: ctest -C ${{ env.BUILD_TYPE }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir parsearg/
+          cp parsearg.hpp parsearg/
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]
+          then
+            cp '${{ github.workspace }}/build/${{ env.BUILD_TYPE }}/${{ matrix.lib_name }}' parsearg/
+            7z a ${{ matrix.artifact_name }} parsearg/
+          else
+            cp '${{ github.workspace }}/build/${{ matrix.lib_name }}' parsearg/
+            tar czvf ${{ matrix.artifact_name }} parsearg/
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 'parsearg ${{ github.event.pull_request.title }}'
+          body: ${{ github.event.pull_request.body }}
+          tag_name: ${{ github.event.pull_request.title }}
+          make_latest: true
+          files: |
+            parsearg_linux.tgz
+            parsearg_windows.zip
