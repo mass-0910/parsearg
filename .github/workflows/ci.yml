@@ -3,6 +3,7 @@ name: Basic Workflow
 on:
   push:
   pull_request:
+    types: [opened, synchronize, reopened, closed]
 
 env:
   BUILD_TYPE: Release
