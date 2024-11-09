@@ -109,12 +109,12 @@ bool parser::contains_argument(const std::string& argument_name) {
 }
 
 bool parser::contains_option(const std::string& option_name) {
-    return parsed_args.find(option_name + "@opt") != parsed_args.end();
+    return parsed_options.find(option_name) != parsed_options.end();
 }
 
 std::string parser::parsed_value(const std::string& name, bool is_option) {
     if (is_option) {
-        return parsed_args.at(name + "@opt");
+        return parsed_options.at(name);
     } else {
         return parsed_args.at(name);
     }
@@ -126,14 +126,14 @@ parsearg_error_t parser::parse_long_option(int& i, const std::vector<std::string
     if (option_record_p != option_list.end()) {
         if (option_record_p->has_argument) {
             if (i + 1 < arg_list.size()) {
-                parsed_args[option_name + "@opt"] = arg_list[i++ + 1];
+                parsed_options[option_name] = arg_list[i++ + 1];
             } else {
                 // Error if there are no arguments after the option which requires an argument of its own
                 std::cerr << arg_list[i] << " option requires an argument" << std::endl;
                 return PARSE_ERROR_LACK_OF_OPTION_ARGUMENTS;
             }
         } else {
-            parsed_args[option_name + "@opt"] = "";
+            parsed_options[option_name] = "";
         }
     } else {
         // Error if the option is not in the option_list
@@ -154,13 +154,13 @@ parsearg_error_t parser::parse_char_option(int& i, const std::vector<std::string
         }
         const auto& found_option = found->second;
         if (!found_option.has_argument) {
-            parsed_args[found_option.name + "@opt"] = "";
+            parsed_options[found_option.name] = "";
             continue;
         }
         if (j + 1 < arg_list[i].length()) {
-            parsed_args[found_option.name + "@opt"] = arg_list[i].substr(j + 1);
+            parsed_options[found_option.name] = arg_list[i].substr(j + 1);
         } else if (i + 1 < arg_list.size()) {
-            parsed_args[found_option.name + "@opt"] = arg_list[i++ + 1];
+            parsed_options[found_option.name] = arg_list[i++ + 1];
             return PARSE_OK;
         } else {
             // Error if there are no arguments after the option which requires an argument of its own
