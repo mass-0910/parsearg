@@ -3,6 +3,7 @@ name: Basic Workflow
 on:
   push:
   pull_request:
+    types: [opened, synchronize, reopened, closed]
 
 env:
   BUILD_TYPE: Release
@@ -59,6 +60,7 @@ jobs:
 
 
   release:
+    needs: build
     runs-on: ubuntu-latest
     if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
     steps:
