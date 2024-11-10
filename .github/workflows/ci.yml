@@ -36,14 +36,16 @@ jobs:
         if: matrix.build_type == 'Debug'
         working-directory: ${{ github.workspace }}/build
         run: |
-          OpenCppCoverage.exe --quiet --export_type cobertura:cobertura_win.xml --cover_children --sources ${{ github.workspace }} --excluded_sources ${{ github.workspace }}\build -- ctest.exe --build-config Debug
+          OpenCppCoverage.exe --quiet --export_type cobertura:cobertura.xml --export_type html:coverage_report --cover_children --sources ${{ github.workspace }} --excluded_sources ${{ github.workspace }}\build -- ctest.exe --build-config Debug
 
       - name: Upload coverage report
         if: matrix.build_type == 'Debug'
         uses: actions/upload-artifact@v4
         with:
-          name: cobertura_win.xml
-          path: build/cobertura_win.xml
+          name: coverage_report_windows
+          path: |
+            build/cobertura.xml
+            build/coverage_report
 
       - name: Package
         shell: bash
