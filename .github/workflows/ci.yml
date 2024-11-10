@@ -64,6 +64,8 @@ jobs:
   coverage_report:
     needs: build_and_test_windows
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Download coverage
         uses: actions/download-artifact@v4
@@ -87,6 +89,13 @@ jobs:
         shell: bash
         run: |
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
   build_and_test_linux:
     runs-on: ubuntu-latest
