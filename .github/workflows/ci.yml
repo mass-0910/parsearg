@@ -5,24 +5,16 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  build_and_test_windows:
+    runs-on: windows-latest
+    env:
+      artifact_name: parsearg_windows.zip
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            lib_name: libparsearg.a
-            artifact_name: parsearg_linux.tgz
-          - os: windows-latest
-            lib_name: parsearg.lib
-            artifact_name: parsearg_windows.zip
+        build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure cmake
         shell: bash
@@ -32,41 +24,135 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 4
+          cmake --build build --config ${{ matrix.build_type }} --parallel 4
 
-      - name: Test
+      - name: Setup OpenCppCoverage and add to PATh
+        if: matrix.build_type == 'Debug'
+        run: |
+          choco install OpenCppCoverage -y
+          echo "C:\Program Files\OpenCppCoverage" >> $env:GITHUB_PATH
+
+      - name: Test with coverage
+        if: matrix.build_type == 'Debug'
         working-directory: ${{ github.workspace }}/build
-        run: ctest -C ${{ env.BUILD_TYPE }}
+        run: |
+          OpenCppCoverage.exe --quiet --export_type cobertura:cobertura.xml --export_type html:coverage_report --cover_children --sources ${{ github.workspace }} --excluded_sources ${{ github.workspace }}\build -- ctest.exe --build-config Debug
+
+      - name: Upload coverage report
+        if: matrix.build_type == 'Debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage_report_windows
+          path: |
+            build/cobertura.xml
+            build/coverage_report
 
       - name: Package
         shell: bash
         run: |
           mkdir parsearg/
           cp parsearg.hpp parsearg/
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]
-          then
-            cp '${{ github.workspace }}/build/${{ env.BUILD_TYPE }}/${{ matrix.lib_name }}' parsearg/
-            7z a ${{ matrix.artifact_name }} parsearg/
-          else
-            cp '${{ github.workspace }}/build/${{ matrix.lib_name }}' parsearg/
-            tar czvf ${{ matrix.artifact_name }} parsearg/
-          fi
+          cp '${{ github.workspace }}/build/${{ matrix.build_type }}/parsearg.lib' parsearg/
+          7z a ${{ env.artifact_name }} parsearg/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}
+          name: windows_${{ matrix.build_type }}
+          path: ${{ env.artifact_name }}
+
+  coverage_report:
+    needs: build_and_test_windows
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage_report_windows
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: cobertura.xml
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: true
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '60 80'
+
+      - name: Add Title to report
+        shell: bash
+        run: |
+          sed -i '1s/^/# Test Coverage Summary\n/' code-coverage-results.md
+
+      - name: Show summary Coverage Report
+        shell: bash
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+  build_and_test_linux:
+    runs-on: ubuntu-latest
+    env:
+      artifact_name: parsearg_linux.tgz
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure cmake
+        shell: bash
+        run: |
+          cmake -S . -B build -DTEST_ENABLE=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} --parallel 4
+
+      - name: Test
+        if: matrix.build_type == 'Debug'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          ctest -C ${{ matrix.build_type }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir parsearg/
+          cp parsearg.hpp parsearg/
+          cp '${{ github.workspace }}/build/libparsearg.a' parsearg/
+          tar czvf ${{ env.artifact_name }} parsearg/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux_${{ matrix.build_type }}
+          path: ${{ env.artifact_name }}
 
 
   release:
-    needs: build
+    needs: [build_and_test_windows, build_and_test_linux]
     runs-on: ubuntu-latest
     if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
+          pattern: '*_Release'
           merge-multiple: true
 
       - name: Release
