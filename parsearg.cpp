@@ -159,6 +159,7 @@ parsearg_error_t parser::parse_char_option(int& i, const std::vector<std::string
         }
         if (j + 1 < arg_list[i].length()) {
             parsed_options[found_option.name] = arg_list[i].substr(j + 1);
+            return PARSE_OK;
         } else if (i + 1 < arg_list.size()) {
             parsed_options[found_option.name] = arg_list[i++ + 1];
             return PARSE_OK;
