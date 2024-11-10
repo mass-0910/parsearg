@@ -13,7 +13,8 @@ TEST(parsearg_test, argument_test) {
     char *argv[] = {"program_name", "arg1", "arg2"};
     pa.argument("foo", "foo is mock");
     pa.argument("bar", "bar is mock");
-    pa.parse(argc, argv);
+    auto err = pa.parse(argc, argv);
+    EXPECT_EQ(err, parsearg::PARSE_OK);
     EXPECT_EQ(pa.parsed_value("foo", false), "arg1");
     EXPECT_EQ(pa.parsed_value("bar", false), "arg2");
 }
@@ -25,7 +26,8 @@ TEST(parsearg_test, option_test) {
     char *argv[] = {"program_name", "--opt2"};
     pa.option("opt1", "opt1 is mock", false);
     pa.option("opt2", "opt2 is mock", false);
-    pa.parse(argc, argv);
+    auto err = pa.parse(argc, argv);
+    EXPECT_EQ(err, parsearg::PARSE_OK);
     EXPECT_FALSE(pa.contains_option("opt1"));
     EXPECT_TRUE(pa.contains_option("opt2"));
 }
@@ -37,7 +39,8 @@ TEST(parsearg_test, option_with_argument_test) {
     char *argv[] = {"program_name", "--opt1", "arg1", "--opt2", "arg2"};
     pa.option("opt1", "opt1 is mock", true);
     pa.option("opt2", "opt2 is mock", true);
-    pa.parse(argc, argv);
+    auto err = pa.parse(argc, argv);
+    EXPECT_EQ(err, parsearg::PARSE_OK);
     EXPECT_TRUE(pa.contains_option("opt1"));
     EXPECT_TRUE(pa.contains_option("opt2"));
     EXPECT_EQ(pa.parsed_value("opt1", true), "arg1");
@@ -54,7 +57,8 @@ TEST(parsearg_test, option_shortname_test) {
     pa.option("optC", "optC is mock", false, 'C');
     pa.option("optD", "optD is mock", true, 'D');
     pa.option("optE", "optE is mock", true, 'E');
-    pa.parse(argc, argv);
+    auto err = pa.parse(argc, argv);
+    EXPECT_EQ(err, parsearg::PARSE_OK);
     EXPECT_TRUE(pa.contains_option("optA"));
     EXPECT_TRUE(pa.contains_option("optB"));
     EXPECT_TRUE(pa.contains_option("optC"));
