@@ -61,6 +61,33 @@ jobs:
           name: windows_${{ matrix.build_type }}
           path: ${{ env.artifact_name }}
 
+  coverage_report:
+    needs: build_and_test_windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage_report_windows
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: cobertura.xml
+          badge: false
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: true
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '60 80'
+
+      - name: Show summary Coverage Report
+        shell: bash
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+
   build_and_test_linux:
     runs-on: ubuntu-latest
     env:
