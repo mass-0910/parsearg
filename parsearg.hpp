@@ -1,7 +1,7 @@
 #pragma once
 
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace parsearg {
@@ -86,7 +86,7 @@ public:
     std::string get_program_name();
 
 private:
-    using parsed_arg_t = std::map<std::string, std::string>;
+    using parsed_arg_t = std::unordered_map<std::string, std::string>;
 
     struct argument_record_t {
         std::string name;
@@ -106,7 +106,7 @@ private:
 
     parsed_arg_t parsed_args;
     parsed_arg_t parsed_options;
-    std::map<char, option_record_t> short_option;
+    std::unordered_map<char, option_record_t> short_option;
     std::string program_name;
     std::vector<argument_record_t> argument_list;
     std::vector<option_record_t> option_list;
