@@ -16,11 +16,11 @@ void parser::argument(const std::string& argument_name, const std::string& descr
         std::cerr << "You can't add required arguments after optional arguments." << std::endl;
         exit(1);
     }
-    argument_list.push_back(argument_record_t{argument_name, description, is_optional});
+    argument_list.emplace_back(argument_record_t{argument_name, description, is_optional});
 }
 
 void parser::option(const std::string& option_name, const std::string& description, bool has_argument, char short_option_name) {
-    option_list.push_back(option_record_t{option_name, description, short_option_name, has_argument});
+    option_list.emplace_back(option_record_t{option_name, description, short_option_name, has_argument});
     if (short_option_name) {
         short_option[short_option_name] = option_list.back();
     }
